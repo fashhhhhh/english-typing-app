@@ -57,39 +57,10 @@ function New-Icon([int]$size, [string]$outPath) {
   Write-Host "saved $outPath ($size x $size)"
 }
 
-# PWA 图标与安卓 mipmap 各密度
-New-Icon 512 (Join-Path $pub 'icon-512.png')
+# 网页图标（index.html 的 favicon）
 New-Icon 192 (Join-Path $pub 'icon-192.png')
-foreach ($s in 48, 72, 96, 144, 192, 256) {
-  New-Icon $s (Join-Path $res "icon-$s.png")
-}
-
-# 安卓自适应图标前景层：透明背景 + 居中键帽（落在安全区内）
-function New-Foreground([int]$size, [string]$outPath) {
-  $bmp = New-Object System.Drawing.Bitmap($size, $size)
-  $g = [System.Drawing.Graphics]::FromImage($bmp)
-  $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
-  $g.Clear([System.Drawing.Color]::Transparent)
-  $kw = $size * 0.42
-  $kx = ($size - $kw) / 2
-  $ky = ($size - $kw) / 2
-  $keyPath = New-RoundRect $kx $ky $kw $kw ($size * 0.07)
-  $whiteBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::White)
-  $g.FillPath($whiteBrush, $keyPath)
-  $font = New-Object System.Drawing.Font('Segoe UI', [float]($kw * 0.56), [System.Drawing.FontStyle]::Bold)
-  $fmt = New-Object System.Drawing.StringFormat
-  $fmt.Alignment = [System.Drawing.StringAlignment]::Center
-  $fmt.LineAlignment = [System.Drawing.StringAlignment]::Center
-  $textBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(0x1D, 0x4E, 0xD8))
-  $g.DrawString('A', $font, $textBrush, (New-Object System.Drawing.RectangleF($kx, $ky, $kw, $kw)), $fmt)
-  $g.Dispose()
-  $bmp.Save($outPath, [System.Drawing.Imaging.ImageFormat]::Png)
-  $bmp.Dispose()
-  Write-Host "saved $outPath (foreground $size)"
-}
-foreach ($s in 48, 72, 96, 144, 192) {
-  New-Foreground $s (Join-Path $res "foreground-$s.png")
-}
+# app.ico 的源图（256px），ICO 由下方步骤封装
+New-Icon 256 (Join-Path $res 'icon-256.png')
 
 # 生成 Windows ICO（256 尺寸 PNG 封装为单条目 ICO）
 $png = [System.IO.File]::ReadAllBytes((Join-Path $res 'icon-256.png'))
