@@ -1,0 +1,38 @@
+[
+  {
+    "id": "after-twenty-years",
+    "title": "After Twenty Years",
+    "titleZh": "二十年后",
+    "author": "O. Henry",
+    "level": "intermediate",
+    "source": "《The Four Million》(1906) · 公版作品",
+    "intro": "两个在纽约一起长大的好友约定二十年后原地重逢。今晚，赴约的人等在旧饭馆门口，而巡逻的警察……欧·亨利笔下最著名的反转短篇之一。",
+    "paragraphCount": 39,
+    "wordCount": 1260,
+    "charCount": 6733
+  },
+  {
+    "id": "the-lion-and-the-mouse",
+    "title": "The Lion and the Mouse",
+    "titleZh": "狮子与老鼠",
+    "author": "Aesop",
+    "level": "basic",
+    "source": "《伊索寓言》· 公版作品",
+    "intro": "一头熟睡的狮子放走了吵醒他的小老鼠，小老鼠许诺将来报答他。狮子没想到，有一天救他出来的正是这只微不足道的小老鼠。句子短、生词少，适合刚开始练文章跟打。",
+    "paragraphCount": 8,
+    "wordCount": 147,
+    "charCount": 698
+  },
+  {
+    "id": "walden-simplicity",
+    "title": "Simplicity (from Walden)",
+    "titleZh": "简朴生活（《瓦尔登湖》节选）",
+    "author": "Henry David Thoreau",
+    "level": "advanced",
+    "source": "《Walden》(1854) · 公版作品",
+    "intro": "梭罗在瓦尔登湖畔独居两年的思考：把生活压缩到最本真的样子。长句、抽象词与修辞密集，适合已经熟练后挑战阅读节奏与标点。",
+    "paragraphCount": 7,
+    "wordCount": 271,
+    "charCount": 1412
+  }
+]

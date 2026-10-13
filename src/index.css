@@ -1,0 +1,153 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-slate-50 text-ink antialiased;
+}
+
+::selection {
+  @apply bg-primary/20;
+}
+
+/* ============================================================
+   深色主题（夜晚模式）
+   在 <html> 上切换 .dark，集中覆盖项目使用的语义色板，
+   免去在每个组件里重复书写 dark: 变体。
+   ============================================================ */
+.dark body {
+  background-color: #0b1220;
+  color: #e6ecf5;
+}
+
+/* 背景层 */
+.dark .bg-white {
+  background-color: #111c2e;
+}
+.dark .bg-white\/95,
+.dark .bg-white\/90 {
+  background-color: rgba(17, 28, 46, 0.95);
+}
+.dark .bg-white\/80 {
+  background-color: rgba(17, 28, 46, 0.8);
+}
+.dark .bg-white\/70 {
+  background-color: rgba(17, 28, 46, 0.75);
+}
+.dark .border-white\/70 {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.dark .bg-slate-50 {
+  background-color: #0b1220;
+}
+.dark .bg-slate-50\/70 {
+  background-color: rgba(11, 18, 32, 0.75);
+}
+.dark .bg-slate-50\/60 {
+  background-color: rgba(11, 18, 32, 0.65);
+}
+.dark .bg-slate-100,
+.dark .bg-slate-100\/80 {
+  background-color: #1b2842;
+}
+.dark .bg-slate-200,
+.dark .bg-slate-200\/80 {
+  background-color: #24314a;
+}
+.dark .bg-ink {
+  background-color: #1e293b;
+}
+.dark .hover\:bg-slate-50:hover {
+  background-color: #16233a;
+}
+.dark .hover\:bg-slate-50\/60:hover,
+.dark .hover\:bg-slate-50\/70:hover {
+  background-color: rgba(22, 35, 58, 0.85);
+}
+.dark .hover\:bg-slate-100:hover,
+.dark .hover\:bg-slate-100\/80:hover {
+  background-color: #1b2842;
+}
+.dark .hover\:bg-white:hover {
+  background-color: #16233a;
+}
+.dark .bg-primary\/\[0\.04\] {
+  background-color: rgba(37, 99, 235, 0.16);
+}
+
+/* 边框与描边 */
+.dark .border-slate-200,
+.dark .border-slate-200\/80 {
+  border-color: #24314a;
+}
+.dark .border-slate-100 {
+  border-color: #1c2942;
+}
+.dark .border-slate-300 {
+  border-color: #2c3a55;
+}
+.dark .ring-slate-200\/70 {
+  --tw-ring-color: rgba(36, 49, 74, 0.8);
+}
+.dark .divide-slate-100 > * + *,
+.dark .divide-slate-50 > * + * {
+  border-color: #1c2942;
+}
+
+/* 文字 */
+.dark .text-ink {
+  color: #e6ecf5;
+}
+.dark .text-muted {
+  color: #97a6bd;
+}
+.dark .text-faint {
+  color: #6b7d99;
+}
+.dark .text-slate-300 {
+  color: #4b5b76;
+}
+.dark .text-slate-400 {
+  color: #64748b;
+}
+.dark .text-slate-600,
+.dark .text-gray-600 {
+  color: #cbd5e1;
+}
+
+/* hover 文字色：暗色下 text-ink 会变成近黑，需整体提亮，否则悬停时看不清 */
+.dark .hover\:text-ink:hover {
+  color: #e6ecf5;
+}
+.dark .hover\:text-muted:hover {
+  color: #97a6bd;
+}
+.dark .hover\:text-faint:hover {
+  color: #9aa9c2;
+}
+.dark .text-gray-50 {
+  color: #e6ecf5;
+}
+.dark .placeholder\:text-faint::placeholder {
+  color: #55647d;
+}
+
+/* 输入控件与滚动条 */
+.dark input,
+.dark textarea {
+  color-scheme: dark;
+}
+.dark * {
+  scrollbar-color: #33415c transparent;
+}
+
+/* 深色下的阴影更收敛 */
+.dark .shadow-sm,
+.dark .shadow-md,
+.dark .shadow-lg,
+.dark .shadow-xl,
+.dark .shadow-2xl {
+  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.8);
+}

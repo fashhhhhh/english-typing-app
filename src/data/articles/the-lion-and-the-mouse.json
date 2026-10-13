@@ -1,0 +1,43 @@
+{
+  "id": "the-lion-and-the-mouse",
+  "title": "The Lion and the Mouse",
+  "titleZh": "狮子与老鼠",
+  "author": "Aesop",
+  "level": "basic",
+  "source": "《伊索寓言》· 公版作品",
+  "intro": "一头熟睡的狮子放走了吵醒他的小老鼠，小老鼠许诺将来报答他。狮子没想到，有一天救他出来的正是这只微不足道的小老鼠。句子短、生词少，适合刚开始练文章跟打。",
+  "paragraphs": [
+    {
+      "en": "A Lion was sleeping in the forest. A little Mouse ran over his nose and woke him up.",
+      "zh": "一头狮子正在森林里睡觉。一只小老鼠从他的鼻子上跑过，把他弄醒了。"
+    },
+    {
+      "en": "The Lion put his big paw on the Mouse and opened his mouth to eat him.",
+      "zh": "狮子用大大的爪子按住老鼠，张开嘴巴要把他吃掉。"
+    },
+    {
+      "en": "\u201cPlease let me go,\u201d said the little Mouse. \u201cI will help you some day.\u201d",
+      "zh": "「请放了我吧，」小老鼠说，「总有一天我会报答你的。」"
+    },
+    {
+      "en": "The Lion laughed. \u201cYou are so small. How can you help me?\u201d But he was kind, so he let the Mouse go.",
+      "zh": "狮子笑了。「你这么小，能帮我什么忙呢？」但他心地善良，还是放走了老鼠。"
+    },
+    {
+      "en": "A few days later, the Lion was caught in a net. He tried and tried, but he could not get out. He roared and roared.",
+      "zh": "几天之后，狮子落进了猎网。他挣扎了一次又一次，却怎么也出不来，只能不停地怒吼。"
+    },
+    {
+      "en": "The little Mouse heard him. She ran to the net and began to bite the ropes with her sharp teeth. One by one, the ropes broke.",
+      "zh": "小老鼠听见了。她跑到网边，用尖尖的牙齿啃咬绳索。一根接着一根，绳子断了。"
+    },
+    {
+      "en": "\u201cYou see,\u201d said the Mouse, \u201ceven a little mouse can help a big lion.\u201d",
+      "zh": "「你看，」老鼠说，「一只小老鼠也能帮上大狮子的忙。」"
+    },
+    {
+      "en": "The Lion was free, and the two of them became good friends.",
+      "zh": "狮子重获自由，他们俩从此成了好朋友。"
+    }
+  ]
+}
