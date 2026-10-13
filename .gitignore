@@ -6,3 +6,4 @@ temp/
 tools/
 *.local
 .codebuddy/
+.playwright-cli/
