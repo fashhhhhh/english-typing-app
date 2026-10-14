@@ -77,24 +77,39 @@ export default function ArticleSession({
     focus();
   };
 
-  /** 手机键盘弹出时压缩布局，并把正文滚到可视区顶部，避免被键盘遮挡 */
+  /** 手机键盘弹出时压缩布局，并以「中文对照」为锚点滚动，保证中文与正文都在视野内 */
   const keyboardOpen = useKeyboardOpen(isTouch);
+  const zhRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
 
-  // 键盘弹出后、以及每次按键后检查：若正文被浏览器自动滚动顶出可视区就拉回来
+  /** 把锚点（有中文对照时用中文卡，否则用正文）滚到顶部栏下方 */
+  const scrollAnchorToTop = useCallback(() => {
+    const el = zhRef.current ?? textRef.current;
+    if (!el) return;
+    const top = el.getBoundingClientRect().top + window.scrollY - 62;
+    window.scrollTo({ top: Math.max(0, top) });
+  }, []);
+
+  // 键盘弹出后、以及每次按键后检查：锚点被顶出可视区就拉回来
   // （iOS 为了让聚焦元素露出键盘会自行滚动整页）
   useEffect(() => {
     if (!keyboardOpen) return;
-    const timer = window.setTimeout(() => {
-      const holder = textRef.current;
-      if (!holder) return;
+    const check = () => {
+      const el = zhRef.current ?? textRef.current;
+      if (!el) return;
       const vh = window.visualViewport?.height ?? window.innerHeight;
-      if (holder.getBoundingClientRect().bottom > vh + 4) {
-        holder.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      const top = el.getBoundingClientRect().top;
+      if (top < -4 || top > vh - 110) {
+        scrollAnchorToTop();
+        // 轻微滚动一次，促使 Safari 同步可视视口
+        window.scrollBy(0, 1);
+        window.scrollBy(0, -1);
       }
-    }, 180);
-    return () => window.clearTimeout(timer);
-  }, [keyboardOpen, snapshot.stats.totalKeystrokes]);
+    };
+    // 键盘动画与布局重排期间多检查几次，单次检查容易踩在中间态
+    const timers = [120, 320, 600, 1000, 1500].map((ms) => window.setTimeout(check, ms));
+    return () => timers.forEach((t) => window.clearTimeout(t));
+  }, [keyboardOpen, snapshot.stats.totalKeystrokes, scrollAnchorToTop]);
 
   const currentZh = paragraphs[snapshot.paragraphIndex]?.zh ?? '';
   const readAloud = useCallback(() => speakEnglish(snapshot.paragraphText), [snapshot.paragraphText]);
@@ -215,14 +230,29 @@ export default function ArticleSession({
         </button>
       </div>
 
-      {/* 中文对照 */}
+      {/* 中文对照：键盘弹出时作为滚动锚点，并在紧凑排版下缩小占位 */}
       {(showZh || peekZh) && (
-        <div className="rounded-2xl border border-primary/15 bg-primary/[0.04] px-5 py-4">
-          <p className="mb-1 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.2em] text-primary/70">
+        <div
+          ref={zhRef}
+          className={`scroll-mt-16 rounded-2xl border border-primary/15 bg-primary/[0.04] ${
+            keyboardOpen ? 'px-3.5 py-2.5' : 'px-5 py-4'
+          }`}
+        >
+          <p
+            className={`flex items-center gap-1.5 font-medium uppercase text-primary/70 ${
+              keyboardOpen ? 'mb-0.5 text-[10px] tracking-[0.15em]' : 'mb-1 text-[11px] tracking-[0.2em]'
+            }`}
+          >
             <Quote size={12} />
             本段中文
           </p>
-          <p className="text-sm leading-relaxed text-ink sm:text-base">{currentZh}</p>
+          <p
+            className={`leading-relaxed text-ink ${
+              keyboardOpen ? 'text-[13px]' : 'text-sm sm:text-base'
+            }`}
+          >
+            {currentZh}
+          </p>
         </div>
       )}
 
@@ -233,6 +263,7 @@ export default function ArticleSession({
           states={snapshot.states}
           cursor={snapshot.cursor}
           wrongNow={false}
+          compact={keyboardOpen}
           onClick={() => undefined}
         />
       </div>

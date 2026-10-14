@@ -28,7 +28,8 @@ export default function MobileNav() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-1.5 border-b border-slate-200/80 bg-white/85 px-2.5 backdrop-blur-xl md:hidden">
+      {/* 顶栏不透明：正文区滚动时会从下方穿过，半透明会显得杂乱 */}
+      <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-1.5 border-b border-slate-200/80 bg-white px-2.5 md:hidden">
         <button
           onClick={() => setOpen(true)}
           aria-label="打开菜单"

@@ -91,19 +91,21 @@ export default function PracticeSession({
   // （iOS 为了让聚焦元素露出键盘，会自行滚动整页或偏移可视视口）
   useEffect(() => {
     if (!keyboardOpen) return;
-    const timer = window.setTimeout(() => {
+    const check = () => {
       const word = wordRef.current;
       if (!word) return;
-      const vv = window.visualViewport;
-      const vh = vv?.height ?? window.innerHeight;
-      if (word.getBoundingClientRect().bottom > vh + 4) {
+      const vh = window.visualViewport?.height ?? window.innerHeight;
+      const rect = word.getBoundingClientRect();
+      if (rect.bottom > vh + 4 || rect.top < -4) {
         window.scrollTo({ top: 0 });
         // 轻微滚动一次，促使 Safari 重新同步可视视口
         window.scrollBy(0, 1);
         window.scrollBy(0, -1);
       }
-    }, 220);
-    return () => window.clearTimeout(timer);
+    };
+    // 键盘动画与布局重排期间多检查几次，单次检查容易踩在中间态
+    const timers = [120, 320, 600, 1000, 1500].map((ms) => window.setTimeout(check, ms));
+    return () => timers.forEach((t) => window.clearTimeout(t));
   }, [keyboardOpen, snapshot.stats.totalKeystrokes]);
 
   /**
