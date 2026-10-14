@@ -34,16 +34,17 @@ export default function LibrarySelect({ levels, value, onChange }: LibrarySelect
   // 点击外部或 Esc 关闭
   useEffect(() => {
     if (!open) return;
-    const onPointerDown = (e: MouseEvent) => {
+    const onPointerDown = (e: PointerEvent) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
     };
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
     };
-    document.addEventListener('mousedown', onPointerDown);
+    // pointerdown 同时覆盖鼠标与触摸，手机上点击外部也能关闭
+    document.addEventListener('pointerdown', onPointerDown);
     document.addEventListener('keydown', onKeyDown);
     return () => {
-      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('pointerdown', onPointerDown);
       document.removeEventListener('keydown', onKeyDown);
     };
   }, [open]);
@@ -54,14 +55,14 @@ export default function LibrarySelect({ levels, value, onChange }: LibrarySelect
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className={`flex cursor-pointer items-center gap-2 rounded-full border bg-white px-4 py-2.5 text-sm font-medium shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow ${
+        className={`flex cursor-pointer items-center gap-2 rounded-full border bg-white px-3 py-2 text-xs font-medium shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow sm:px-4 sm:py-2.5 sm:text-sm ${
           open ? 'border-primary/40 text-primary' : 'border-slate-200 text-ink'
         }`}
       >
-        <Library size={15} className="text-primary" />
-        <span>{current?.name ?? '选择词库'}</span>
+        <Library size={15} className="shrink-0 text-primary" />
+        <span className="truncate">{current?.name ?? '选择词库'}</span>
         {currentCount !== undefined && (
-          <span className="text-xs font-normal text-faint">{currentCount} 词</span>
+          <span className="hidden text-xs font-normal text-faint sm:inline">{currentCount} 词</span>
         )}
         <ChevronDown
           size={15}
@@ -72,7 +73,7 @@ export default function LibrarySelect({ levels, value, onChange }: LibrarySelect
       {open && (
         <div
           role="listbox"
-          className="animate-in fade-in slide-in-from-top-1 absolute left-0 top-full z-30 mt-2 w-60 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl duration-150"
+          className="animate-in fade-in slide-in-from-top-1 absolute left-0 top-full z-30 mt-2 w-56 max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl duration-150 sm:w-60"
         >
           {levels.map((l) => {
             const selected = l.id === value;

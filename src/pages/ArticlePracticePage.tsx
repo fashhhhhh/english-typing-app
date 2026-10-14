@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import ArticleSession from './article/ArticleSession';
 import ResultModal from '../components/ResultModal';
+import ArticleReview from '../components/ArticleReview';
 import { ArticleSnapshot } from '../engine/articleEngine';
 import {
   ArticleData,
@@ -23,11 +24,14 @@ export default function ArticlePracticePage() {
   const [round, setRound] = useState(0);
   const [result, setResult] = useState<ArticleSnapshot | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  /** 结算后是否正在回看"全文" */
+  const [showOriginal, setShowOriginal] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setResult(null);
+    setShowOriginal(false);
     loadArticle(id ?? '', storage).then((data) => {
       if (cancelled) return;
       setArticle(data);
@@ -111,14 +115,34 @@ export default function ArticlePracticePage() {
         {article.intro}
       </p>
 
-      <ArticleSession
-        key={round}
-        paragraphs={article.paragraphs}
-        sound={settings.sound}
-        autoSpeak={false}
-        defaultShowZh={settings.articleShowZh}
-        onComplete={handleComplete}
-      />
+      <div className={showOriginal ? 'hidden' : ''}>
+        <ArticleSession
+          key={round}
+          paragraphs={article.paragraphs}
+          sound={settings.sound}
+          autoSpeak={false}
+          defaultShowZh={settings.articleShowZh}
+          frozen={showOriginal}
+          onComplete={handleComplete}
+        />
+      </div>
+
+      {/* 全文：结算后通读原文与中文对照 */}
+      {showOriginal && (
+        <ArticleReview
+          titleZh={article.titleZh}
+          title={article.title}
+          author={article.author}
+          paragraphs={article.paragraphs}
+          onRestart={() => {
+            setShowOriginal(false);
+            setDismissed(true);
+            setResult(null);
+            setRound((r) => r + 1);
+          }}
+          onClose={() => setShowOriginal(false)}
+        />
+      )}
 
       {result && !dismissed && (
         <ResultModal
@@ -128,11 +152,12 @@ export default function ArticlePracticePage() {
           onRestart={() => {
             setDismissed(true);
             setResult(null);
+            setShowOriginal(false);
             setRound((r) => r + 1);
           }}
           onClose={() => {
             setDismissed(true);
-            navigate('/articles');
+            setShowOriginal(true);
           }}
         />
       )}

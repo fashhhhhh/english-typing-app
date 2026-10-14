@@ -11,6 +11,8 @@ interface WordPanelProps {
   hidden: boolean;
   /** 无限练习：词序只显示当前第几词 */
   infinite?: boolean;
+  /** 未开始时的遮罩提示（移动端为"点击这里开始"） */
+  startHint?: string;
   onSpeak: () => void;
 }
 
@@ -30,11 +32,21 @@ export default function WordPanel({
   showAnswer,
   hidden,
   infinite = false,
+  startHint = '按任意键开始',
   onSpeak,
 }: WordPanelProps) {
   const prev = words[snapshot.wordIndex - 1];
   const next = words[snapshot.wordIndex + 1];
   const letters = snapshot.word.split('');
+
+  /** 单词越长字号越小，保证手机上长词也能一行放下 */
+  const len = snapshot.word.length;
+  const sizeClass =
+    len > 14
+      ? 'text-[26px] sm:text-[52px]'
+      : len > 10
+        ? 'text-[31px] sm:text-[60px]'
+        : 'text-[36px] sm:text-[64px]';
 
   /** 默写模式下未输入的字母显示为下划线，答对/答错后揭示 */
   const displayChar = (ch: string, state: LetterState) => {
@@ -45,7 +57,7 @@ export default function WordPanel({
   return (
     <div className="relative flex w-full flex-1 flex-col items-center justify-center">
       {/* 上一词 / 词序 / 下一词 */}
-      <div className="mb-6 grid w-full max-w-3xl grid-cols-3 items-center px-4 text-sm text-faint sm:text-base">
+      <div className="mb-4 grid w-full max-w-3xl grid-cols-3 items-center px-3 text-xs text-faint sm:mb-6 sm:px-4 sm:text-base">
         <span className="truncate font-mono">{prev?.word ?? ''}</span>
         <span className="flex items-center justify-center gap-2 text-center tabular-nums">
           {hidden && (
@@ -61,7 +73,7 @@ export default function WordPanel({
       {/* 大字单词（逐字母着色，默写时隐藏） */}
       <div
         data-testid="word-display"
-        className={`flex items-baseline justify-center font-mono text-[44px] leading-none tracking-wide sm:text-[64px] ${
+        className={`flex items-baseline justify-center font-mono leading-none tracking-wide ${sizeClass} ${
           snapshot.hasWrong ? 'animate-shake' : ''
         }`}
       >
@@ -75,14 +87,14 @@ export default function WordPanel({
       </div>
 
       {/* 释义 + 发音 */}
-      <div className="mt-6 flex items-center gap-3">
-        <span data-testid="word-meaning" className="text-base text-muted sm:text-lg">
+      <div className="mt-4 flex items-center gap-2 px-4 sm:mt-6 sm:gap-3">
+        <span data-testid="word-meaning" className="text-center text-sm text-muted sm:text-lg">
           {snapshot.label || '—'}
         </span>
         <button
           onClick={onSpeak}
           title="朗读单词（Ctrl + J）"
-          className="cursor-pointer rounded-full p-2 text-faint transition-colors hover:bg-primary/10 hover:text-primary"
+          className="shrink-0 cursor-pointer rounded-full p-2.5 text-faint transition-colors hover:bg-primary/10 hover:text-primary"
           aria-label="朗读单词"
         >
           <Volume2 size={17} />
@@ -90,13 +102,13 @@ export default function WordPanel({
       </div>
 
       {hidden && !showAnswer && (
-        <p className="mt-3 flex items-center gap-1.5 text-xs text-faint">
+        <p className="mt-3 hidden items-center gap-1.5 text-xs text-faint sm:flex">
           <EyeOff size={13} /> 按住 Tab 可查看完整单词
         </p>
       )}
 
       {snapshot.wrongCountInWord >= 2 && !snapshot.hasWrong && (
-        <p className="mt-3 text-xs text-warning">
+        <p className="px-4 text-center text-xs text-warning">
           该词已错 {snapshot.wrongCountInWord} 次，错满 4 次将自动跳过
         </p>
       )}
@@ -104,7 +116,9 @@ export default function WordPanel({
       {/* 未开始时遮罩 */}
       {!snapshot.started && (
         <div className="absolute inset-0 flex items-center justify-center bg-slate-50/70 backdrop-blur-[2px]">
-          <p className="animate-pulse text-lg font-medium text-muted">按任意键开始</p>
+          <p className="animate-pulse px-6 text-center text-base font-medium text-muted sm:text-lg">
+            {startHint}
+          </p>
         </div>
       )}
     </div>

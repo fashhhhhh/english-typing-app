@@ -1,28 +1,9 @@
 import { useEffect, useState } from 'react';
-import {
-  BarChart3,
-  BookMarked,
-  BookOpen,
-  ChevronLeft,
-  ChevronRight,
-  Keyboard,
-  Library,
-  Newspaper,
-  Settings,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, Keyboard } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
+import { navLinks } from './navLinks';
 
 const COLLAPSE_KEY = 'eta_sidebar_collapsed';
-
-const links = [
-  { to: '/practice', label: '单词练习', icon: Keyboard },
-  { to: '/corpus', label: '单词库', icon: BookOpen },
-  { to: '/wrongbook', label: '错词本', icon: BookMarked },
-  { to: '/articles', label: '文章练习', icon: Newspaper },
-  { to: '/article-library', label: '文章库', icon: Library },
-  { to: '/stats', label: '学习统计', icon: BarChart3 },
-  { to: '/settings', label: '设置', icon: Settings },
-];
 
 /** 左侧垂直导航：可折叠（状态本地持久化） */
 export default function Sidebar() {
@@ -37,7 +18,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`sticky top-0 flex h-screen shrink-0 flex-col border-r border-slate-200/80 bg-white/80 backdrop-blur-xl transition-[width] duration-300 ${
+      className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r border-slate-200/80 bg-white/80 backdrop-blur-xl transition-[width] duration-300 md:flex ${
         collapsed ? 'w-[68px]' : 'w-[212px]'
       }`}
     >
@@ -55,7 +36,7 @@ export default function Sidebar() {
 
       {/* 导航项 */}
       <nav className="flex flex-1 flex-col gap-1.5 px-2.5 pt-2">
-        {links.map(({ to, label, icon: Icon }) => (
+        {navLinks.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}

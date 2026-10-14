@@ -33,7 +33,7 @@ export default function ResultModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 backdrop-blur-sm sm:items-center">
-      <div className="animate-in slide-in-from-bottom-8 fade-in w-full max-w-md rounded-t-3xl bg-white p-7 shadow-2xl duration-300 sm:rounded-3xl">
+      <div className="animate-in slide-in-from-bottom-8 fade-in w-full max-w-md rounded-t-3xl bg-white p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl duration-300 sm:rounded-3xl sm:p-7">
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-warning/10 text-warning">

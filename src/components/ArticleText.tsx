@@ -46,7 +46,7 @@ export default function ArticleText({
     >
       <p
         data-testid="article-text"
-        className={`font-mono text-[17px] leading-[2] tracking-normal sm:text-[19px] ${
+        className={`font-mono text-[16px] leading-[1.9] tracking-normal sm:text-[19px] ${
           wrongNow ? 'animate-shake' : ''
         }`}
       >

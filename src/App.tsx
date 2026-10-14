@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
+import MobileNav from './components/MobileNav';
 import PracticePage from './pages/PracticePage';
 import ArticleListPage from './pages/ArticleListPage';
 import ArticleCorpusPage from './pages/ArticleCorpusPage';
@@ -46,26 +47,29 @@ function AppShell() {
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar />
-      <main className="min-w-0 flex-1">
-        <Routes>
-          <Route path="/" element={<Navigate to="/practice" replace />} />
-          <Route path="/practice" element={<PracticePage />} />
-          <Route path="/articles" element={<ArticleListPage />} />
-          <Route path="/article-library" element={<ArticleCorpusPage />} />
-          <Route path="/articles/:id" element={<ArticlePracticePage />} />
-          <Route path="/corpus" element={<CorpusPage />} />
-          <Route path="/wrongbook" element={<WrongBookPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route
-            path="/stats"
-            element={
-              <Suspense fallback={<StatsFallback />}>
-                <StatsPage />
-              </Suspense>
-            }
-          />
-        </Routes>
-      </main>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <MobileNav />
+        <main className="min-w-0 flex-1">
+          <Routes>
+            <Route path="/" element={<Navigate to="/practice" replace />} />
+            <Route path="/practice" element={<PracticePage />} />
+            <Route path="/articles" element={<ArticleListPage />} />
+            <Route path="/article-library" element={<ArticleCorpusPage />} />
+            <Route path="/articles/:id" element={<ArticlePracticePage />} />
+            <Route path="/corpus" element={<CorpusPage />} />
+            <Route path="/wrongbook" element={<WrongBookPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route
+              path="/stats"
+              element={
+                <Suspense fallback={<StatsFallback />}>
+                  <StatsPage />
+                </Suspense>
+              }
+            />
+          </Routes>
+        </main>
+      </div>
     </div>
   );
 }

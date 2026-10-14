@@ -2,9 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Eye, EyeOff, Pause, Play, Quote, Square, Volume2 } from 'lucide-react';
 import ArticleText from '../../components/ArticleText';
 import PauseOverlay from '../../components/PauseOverlay';
+import TypingPad from '../../components/TypingPad';
 import SpeedBar from '../../components/SpeedBar';
 import ChapterProgress from '../../components/ChapterProgress';
 import { useArticleEngine } from '../../hooks/useArticleEngine';
+import { useTypingKeyboard } from '../../hooks/useTypingKeyboard';
 import { ArticleSnapshot } from '../../engine/articleEngine';
 import { ArticleParagraph } from '../../services/articleService';
 import { speakEnglish } from '../../services/speech';
@@ -16,6 +18,8 @@ interface ArticleSessionProps {
   autoSpeak: boolean;
   /** 默认是否显示中文对照（取自设置） */
   defaultShowZh: boolean;
+  /** 结算后回看全文期间冻结键盘输入 */
+  frozen?: boolean;
   onComplete: (snapshot: ArticleSnapshot) => void;
 }
 
@@ -28,6 +32,7 @@ export default function ArticleSession({
   sound,
   autoSpeak,
   defaultShowZh,
+  frozen = false,
   onComplete,
 }: ArticleSessionProps) {
   const [showZh, setShowZh] = useState(defaultShowZh);
@@ -52,6 +57,25 @@ export default function ArticleSession({
 
   snapshotRef.current = snapshot;
 
+  // 移动端：隐藏输入垫接管虚拟键盘（桌面端不渲染）
+  const { inputRef, focus, isTouch } = useTypingKeyboard({
+    onChar: inputChar,
+    onBackspace: backspace,
+    frozen,
+  });
+
+  /**
+   * 点击文章区唤起手机键盘。
+   * 用 click 而不是 pointerup：触摸会依次派发 pointerup → mousedown → click，
+   * 若在 pointerup 里聚焦，随后的 mousedown 会立刻把焦点抢回 body。
+   */
+  const handleAreaClick = (e: React.MouseEvent) => {
+    if (!isTouch || frozen) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('button, a, input, select, label')) return;
+    focus();
+  };
+
   const currentZh = paragraphs[snapshot.paragraphIndex]?.zh ?? '';
   const readAloud = useCallback(() => speakEnglish(snapshot.paragraphText), [snapshot.paragraphText]);
 
@@ -72,6 +96,10 @@ export default function ArticleSession({
   // 全局键盘监听：文章含空格与标点，任何可打印字符都参与输入
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (frozen) return;
+      // 输入垫聚焦时，字符与退格已由输入事件处理，这里跳过避免重复
+      const fromPad = (e.target as HTMLElement | null)?.dataset?.typingPad === 'true';
+      if (fromPad && (e.key === 'Backspace' || e.key.length === 1)) return;
       if (e.key === 'Escape') {
         if (snapshotRef.current?.started && !snapshotRef.current.finished) {
           e.preventDefault();
@@ -106,10 +134,11 @@ export default function ArticleSession({
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [inputChar, backspace, readAloud, togglePause]);
+  }, [inputChar, backspace, readAloud, togglePause, frozen]);
 
   return (
-    <div className="relative flex flex-col gap-4">
+    <div onClick={handleAreaClick} className="relative flex flex-col gap-4">
+      {isTouch && <TypingPad inputRef={inputRef} />}
       {/* 段落进度与操作 */}
       <div className="flex flex-wrap items-center justify-center gap-2.5 text-xs">
         <span className="rounded-full bg-ink px-3.5 py-1.5 font-medium tabular-nums text-white">
@@ -185,10 +214,14 @@ export default function ArticleSession({
         <SpeedBar stats={snapshot.stats} />
       </div>
 
-      <p className="text-center text-xs text-faint">
+      <p className="px-4 text-center text-xs text-faint">
         {snapshot.started
-          ? '输错会停在原处，改正即可继续 · Esc 暂停/继续 · Backspace 退格 · Tab 临时看中文 · Ctrl + J 朗读本段'
-          : '按任意键开始跟打（大小写不敏感）'}
+          ? isTouch
+            ? '输错会停在原处，改正即可继续 · 空格与标点都要输入'
+            : '输错会停在原处，改正即可继续 · Esc 暂停/继续 · Backspace 退格 · Tab 临时看中文 · Ctrl + J 朗读本段'
+          : isTouch
+            ? '点击这里开始跟打（大小写不敏感）'
+            : '按任意键开始跟打（大小写不敏感）'}
       </p>
 
       {/* 暂停浮层 */}

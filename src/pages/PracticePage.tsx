@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import PracticeSession from './practice/PracticeSession';
 import ResultModal from '../components/ResultModal';
+import ChapterReview from '../components/ChapterReview';
 import LibrarySelect from '../components/LibrarySelect';
 import { FollowSnapshot, FollowWord } from '../engine/followEngine';
 import { buildMixedQueue, levelName, Question, WORD_LEVELS } from '../services/corpusService';
@@ -47,6 +48,8 @@ export default function PracticePage() {
   const [sizeInput, setSizeInput] = useState(String(initialSettings.chapterSize));
   const [result, setResult] = useState<{ snapshot: FollowSnapshot } | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  /** 结算后是否正在回看"本章原文" */
+  const [showOriginal, setShowOriginal] = useState(false);
   const [queue, setQueue] = useState<Question[]>([]);
   /** 队列版本号：保证换词库/改题量后练习会话必定以新词表重新挂载 */
   const [queueVersion, setQueueVersion] = useState(0);
@@ -73,6 +76,7 @@ export default function PracticePage() {
     setLoading(true);
     setQueue([]);
     setStartIndex(0);
+    setShowOriginal(false);
 
     if (wrongMode) {
       setQueue(wrongQueue());
@@ -151,10 +155,11 @@ export default function PracticePage() {
         createdAt: Date.now(),
       });
       setDismissed(false);
+      setShowOriginal(false);
       setResult({ snapshot });
-      // 结算后自动换下一组并定位到第一个单词
+      // 保留刚打完的这一组：等用户点"再来一组"再换题，
+      // 这样点"查看原文"看到的才是刚才练过的内容
       setStartIndex(0);
-      setRound((r) => r + 1);
     },
     [storage, level, words, mode, infinite, wrongMode],
   );
@@ -162,12 +167,14 @@ export default function PracticePage() {
   const restart = () => {
     setResult(null);
     setDismissed(false);
+    setShowOriginal(false);
     setStartIndex(0);
     setRound((r) => r + 1);
   };
 
   const switchMode = (next: SessionMode) => {
     if (next === mode) return;
+    setShowOriginal(false);
     setMode(next);
     storage.saveSettings({ ...storage.getSettings(), defaultMode: next });
   };
@@ -206,9 +213,9 @@ export default function PracticePage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-5 px-5 py-6 sm:gap-6 sm:py-8">
+    <div className="mx-auto flex max-w-4xl flex-col gap-4 px-4 py-5 sm:gap-6 sm:px-5 sm:py-8">
       {/* 工具栏 */}
-      <div className="flex flex-wrap items-center gap-2.5">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
         <div className="flex rounded-full border border-slate-200 bg-white p-1 shadow-sm">
           {(
             [
@@ -220,7 +227,7 @@ export default function PracticePage() {
               key={id}
               onClick={() => switchMode(id)}
               title={id === 'follow' ? '显示单词，边看边打' : '隐藏单词，凭记忆默写'}
-              className={`flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+              className={`flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200 sm:px-4 sm:py-2 sm:text-sm ${
                 mode === id
                   ? 'bg-primary text-white shadow-md shadow-primary/30'
                   : 'text-muted hover:text-ink'
@@ -250,8 +257,8 @@ export default function PracticePage() {
           <LibrarySelect levels={WORD_LEVELS} value={level} onChange={changeLevel} />
         )}
 
-        {/* 每组词数与无限模式 */}
-        <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 shadow-sm">
+        {/* 每组词数与无限模式（小屏收纳到「设置」页） */}
+        <div className="hidden items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 shadow-sm sm:flex">
           <span className="text-xs text-muted">每组</span>
           <input
             type="number"
@@ -282,31 +289,34 @@ export default function PracticePage() {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
-          <button
-            onClick={toggleSound}
-            title={sound ? '关闭音效' : '开启音效'}
-            className={`cursor-pointer rounded-full border p-2.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow ${
-              sound
-                ? 'border-primary/30 bg-primary/10 text-primary'
-                : 'border-slate-200 bg-white text-muted hover:text-ink'
-            }`}
-          >
-            {sound ? <Volume2 size={16} /> : <VolumeX size={16} />}
-          </button>
-          <button
-            onClick={toggleSpeak}
-            title={autoSpeak ? '关闭自动朗读' : '开启自动朗读'}
-            className={`cursor-pointer rounded-full border p-2.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow ${
-              autoSpeak
-                ? 'border-primary/30 bg-primary/10 text-primary'
-                : 'border-slate-200 bg-white text-muted hover:text-ink'
-            }`}
-          >
-            <Speech size={16} />
-          </button>
+          {/* 音效与朗读在「设置」页也能改，小屏收起 */}
+          <div className="hidden items-center gap-2 sm:flex">
+            <button
+              onClick={toggleSound}
+              title={sound ? '关闭音效' : '开启音效'}
+              className={`cursor-pointer rounded-full border p-2.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow ${
+                sound
+                  ? 'border-primary/30 bg-primary/10 text-primary'
+                  : 'border-slate-200 bg-white text-muted hover:text-ink'
+              }`}
+            >
+              {sound ? <Volume2 size={16} /> : <VolumeX size={16} />}
+            </button>
+            <button
+              onClick={toggleSpeak}
+              title={autoSpeak ? '关闭自动朗读' : '开启自动朗读'}
+              className={`cursor-pointer rounded-full border p-2.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow ${
+                autoSpeak
+                  ? 'border-primary/30 bg-primary/10 text-primary'
+                  : 'border-slate-200 bg-white text-muted hover:text-ink'
+              }`}
+            >
+              <Speech size={16} />
+            </button>
+          </div>
           <button
             onClick={restart}
-            className="flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-muted shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:text-ink hover:shadow"
+            className="flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-muted shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:text-ink hover:shadow sm:px-4 sm:py-2.5 sm:text-sm"
           >
             <RefreshCw size={14} />
             {infinite ? '换一批' : '下一组'}
@@ -350,18 +360,32 @@ export default function PracticePage() {
           )}
         </div>
       ) : (
-        <PracticeSession
-          key={`${mode}-${queueVersion}`}
-          words={words}
-          startIndex={startIndex}
-          hidden={mode === 'dictation'}
-          infinite={infinite}
-          sound={sound}
-          autoSpeak={autoSpeak}
-          fetchMore={fetchMore}
-          onAdvance={setStartIndex}
-          onComplete={handleComplete}
-        />
+        <>
+          <div className={showOriginal ? 'hidden' : ''}>
+            <PracticeSession
+              key={`${mode}-${queueVersion}`}
+              words={words}
+              startIndex={startIndex}
+              hidden={mode === 'dictation'}
+              frozen={showOriginal}
+              infinite={infinite}
+              sound={sound}
+              autoSpeak={autoSpeak}
+              fetchMore={fetchMore}
+              onAdvance={setStartIndex}
+              onComplete={handleComplete}
+            />
+          </div>
+
+          {/* 本章原文：结算后回看这一组练过的全部单词 */}
+          {showOriginal && (
+            <ChapterReview
+              words={words}
+              onRestart={restart}
+              onClose={() => setShowOriginal(false)}
+            />
+          )}
+        </>
       )}
 
       {result && !dismissed && (
@@ -369,8 +393,11 @@ export default function PracticePage() {
           title={infinite ? '本轮结束' : mode === 'dictation' ? '默写完成' : '本章完成'}
           stats={result.snapshot.stats}
           errorChars={result.snapshot.errorChars}
-          onRestart={() => setDismissed(true)}
-          onClose={() => setDismissed(true)}
+          onRestart={restart}
+          onClose={() => {
+            setDismissed(true);
+            setShowOriginal(true);
+          }}
         />
       )}
     </div>

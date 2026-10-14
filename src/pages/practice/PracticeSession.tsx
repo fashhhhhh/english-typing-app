@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Infinity as InfinityIcon, Pause, Play, Square } from 'lucide-react';
+import { Eye, Infinity as InfinityIcon, Pause, Play, Square } from 'lucide-react';
 import PauseOverlay from '../../components/PauseOverlay';
 import WordPanel from '../../components/WordPanel';
 import SpeedBar from '../../components/SpeedBar';
 import ChapterProgress from '../../components/ChapterProgress';
+import TypingPad from '../../components/TypingPad';
 import { useFollowEngine } from '../../hooks/useFollowEngine';
+import { useTypingKeyboard } from '../../hooks/useTypingKeyboard';
 import { FollowSnapshot, FollowWord } from '../../engine/followEngine';
 import { speakEnglish } from '../../services/speech';
 import {
@@ -20,6 +22,8 @@ interface PracticeSessionProps {
   startIndex: number;
   /** 默写模式：隐藏未输入的字母 */
   hidden: boolean;
+  /** 结算后回看原文期间冻结键盘输入 */
+  frozen?: boolean;
   /** 无限练习：不设章节长度，随时可结束结算 */
   infinite: boolean;
   sound: boolean;
@@ -40,6 +44,7 @@ export default function PracticeSession({
   words: initialWords,
   startIndex,
   hidden,
+  frozen = false,
   infinite,
   sound,
   autoSpeak,
@@ -73,6 +78,21 @@ export default function PracticeSession({
   );
 
   snapshotRef.current = snapshot;
+
+  // 移动端：隐藏输入垫接管虚拟键盘（桌面端不渲染）
+  const { inputRef, focus, isTouch } = useTypingKeyboard({ onChar: inputChar, frozen });
+
+  /**
+   * 点击练习区唤起手机键盘。
+   * 用 click 而不是 pointerup：触摸会依次派发 pointerup → mousedown → click，
+   * 若在 pointerup 里聚焦，随后的 mousedown 会立刻把焦点抢回 body。
+   */
+  const handleAreaClick = (e: React.MouseEvent) => {
+    if (!isTouch || frozen) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('button, a, input, select, label, [role=listbox]')) return;
+    focus();
+  };
 
   // 上报章节进度（供切换模式时续练）
   useEffect(() => {
@@ -125,6 +145,10 @@ export default function PracticeSession({
   // 全局键盘监听：直接捕获按键，无需输入框
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (frozen) return;
+      // 输入垫聚焦时，字符与退格已由输入事件处理，这里跳过避免重复
+      const fromPad = (e.target as HTMLElement | null)?.dataset?.typingPad === 'true';
+      if (fromPad && (e.key === 'Backspace' || e.key.length === 1)) return;
       if (e.key === 'Escape') {
         // 下拉列表打开时 Esc 用于关闭列表，不触发暂停
         if (document.querySelector('[role=listbox]')) return;
@@ -160,35 +184,58 @@ export default function PracticeSession({
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [inputChar, skipWord, repeatSpeak, togglePause]);
+  }, [inputChar, skipWord, repeatSpeak, togglePause, frozen]);
 
   return (
-    <div className="relative flex min-h-[calc(100vh-10rem)] flex-col items-center gap-5">
+    <div
+      onClick={handleAreaClick}
+      className="relative flex min-h-[52dvh] flex-col items-center gap-4 sm:min-h-[calc(100vh-10rem)] sm:gap-5"
+    >
+      {isTouch && <TypingPad inputRef={inputRef} />}
+
       <WordPanel
         snapshot={snapshot}
         words={words}
         showAnswer={showAnswer}
         hidden={hidden}
         infinite={infinite}
+        startHint={isTouch ? '点击这里开始打字' : '按任意键开始'}
         onSpeak={repeatSpeak}
       />
 
-      <div className="flex w-full max-w-2xl items-center gap-3">
+      <div className="flex w-full max-w-2xl flex-wrap items-center gap-2 sm:gap-3">
         {infinite ? (
-          <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-primary/10 px-3.5 py-1.5 text-xs font-medium text-primary">
+          <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary sm:px-3.5">
             <InfinityIcon size={14} />
             无限练习 · 已练 {snapshot.stats.correctWords} 词
           </span>
         ) : (
-          <div className="flex-1">
+          <div className="min-w-[110px] flex-1">
             <ChapterProgress progress={snapshot.stats.progress} />
           </div>
         )}
+        {/* 手机没有 Tab 键，默写模式给一个"按住看答案"按钮 */}
+        {isTouch && hidden && (
+          <button
+            onPointerDown={() => setShowAnswer(true)}
+            onPointerUp={() => setShowAnswer(false)}
+            onPointerLeave={() => setShowAnswer(false)}
+            title="按住查看答案"
+            className="flex shrink-0 cursor-pointer touch-none select-none items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-muted"
+          >
+            <Eye size={12} />
+            看答案
+          </button>
+        )}
         <button
-          onClick={togglePause}
+          onClick={() => {
+            const resuming = snapshot.paused;
+            togglePause();
+            if (resuming) focus();
+          }}
           disabled={!snapshot.started || snapshot.finished}
           title={snapshot.paused ? '继续练习（Esc）' : '暂停练习（Esc）'}
-          className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all duration-200 ${
+          className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-200 sm:px-3.5 ${
             snapshot.started && !snapshot.finished
               ? snapshot.paused
                 ? 'cursor-pointer border-primary/40 bg-primary/10 text-primary'
@@ -216,14 +263,22 @@ export default function PracticeSession({
 
       <SpeedBar stats={snapshot.stats} />
 
-      <p className="text-center text-xs text-faint">
-        输入错误需重打整个单词 · Esc 暂停/继续 · Tab 显示答案 · Ctrl + J 重听发音 · Ctrl + Shift +
-        ←/→ 切换单词
+      <p className="px-4 text-center text-xs text-faint">
+        {isTouch
+          ? '输错需重打整个单词 · 点上方「暂停」可休息'
+          : '输入错误需重打整个单词 · Esc 暂停/继续 · Tab 显示答案 · Ctrl + J 重听发音 · Ctrl + Shift + ←/→ 切换单词'}
         {hidden ? ' · 默写模式下字母以横线隐藏' : ''}
       </p>
 
       {/* 暂停浮层 */}
-      {snapshot.paused && <PauseOverlay onResume={togglePause} />}
+      {snapshot.paused && (
+        <PauseOverlay
+          onResume={() => {
+            togglePause();
+            focus();
+          }}
+        />
+      )}
     </div>
   );
 }
