@@ -7,3 +7,4 @@ tools/
 *.local
 .codebuddy/
 .playwright-cli/
+temp-*
