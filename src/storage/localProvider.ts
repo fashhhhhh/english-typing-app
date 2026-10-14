@@ -18,10 +18,15 @@ const KEYS = {
 } as const;
 
 function readJson<T>(key: string, fallback: T): T {
-  const raw = window.localStorage.getItem(key);
-  if (raw === null) return fallback;
-  const parsed = JSON.parse(raw) as T;
-  return parsed ?? fallback;
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (raw === null) return fallback;
+    const parsed = JSON.parse(raw) as T;
+    return parsed ?? fallback;
+  } catch {
+    // 存储数据损坏时退回默认值，避免整站白屏
+    return fallback;
+  }
 }
 
 function writeJson(key: string, value: unknown): void {

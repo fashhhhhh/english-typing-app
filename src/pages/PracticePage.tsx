@@ -134,7 +134,9 @@ export default function PracticePage() {
       snapshot.wordsWithErrors.forEach((w) =>
         updateWrongBook(storage, 'word', { target: w.word, label: w.label }, false),
       );
+      // 只结算"已练到"的单词：提前结束或无限模式下，未练到的词不参与错词本扣减
       words
+        .slice(0, snapshot.reachedIndex + 1)
         .filter((w) => !errorTargets.has(w.word))
         .forEach((w) => updateWrongBook(storage, 'word', { target: w.word, label: w.label }, true));
 

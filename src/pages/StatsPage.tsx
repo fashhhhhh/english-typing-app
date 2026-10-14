@@ -47,6 +47,13 @@ export default function StatsPage() {
   }, [history]);
 
   const clearHistory = () => {
+    if (
+      !window.confirm(
+        `确定清空全部 ${history.length} 条练习记录吗？打卡热力图与 WPM 趋势也会一并清零。`,
+      )
+    ) {
+      return;
+    }
     storage.clearHistory();
     setRefreshKey((k) => k + 1);
   };

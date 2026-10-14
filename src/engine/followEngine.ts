@@ -34,6 +34,8 @@ export interface FollowStats {
 export interface FollowSnapshot {
   /** 当前单词下标 */
   wordIndex: number;
+  /** 本次练习到达过的最大单词下标（结算时划定"已练范围"） */
+  reachedIndex: number;
   /** 当前单词文本 */
   word: string;
   /** 当前单词中文提示 */
@@ -66,6 +68,7 @@ const MAX_ERRORS_PER_WORD = 4;
 export class FollowEngine {
   private words: FollowWord[];
   private index = 0;
+  private maxIndex = 0;
   private cursor = 0;
   private letterStates: LetterState[] = [];
   private hasWrong = false;
@@ -85,6 +88,7 @@ export class FollowEngine {
     this.words = [...words];
     this.wordErrors = words.map(() => 0);
     this.index = Math.min(Math.max(0, startIndex), Math.max(0, words.length - 1));
+    this.maxIndex = this.index;
     this.resetWordStates();
   }
 
@@ -201,6 +205,7 @@ export class FollowEngine {
       return;
     }
     this.index++;
+    if (this.index > this.maxIndex) this.maxIndex = this.index;
     this.resetWordStates();
   }
 
@@ -212,6 +217,7 @@ export class FollowEngine {
     } else if (this.index < this.words.length - 1) {
       this.index++;
     }
+    if (this.index > this.maxIndex) this.maxIndex = this.index;
     this.resetWordStates();
   }
 
@@ -253,6 +259,7 @@ export class FollowEngine {
     const current = this.currentWord();
     return {
       wordIndex: this.index,
+      reachedIndex: this.maxIndex,
       word: current.word,
       label: current.label,
       cursor: this.cursor,

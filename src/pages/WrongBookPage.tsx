@@ -32,6 +32,9 @@ export default function WrongBookPage() {
   };
 
   const clearAll = () => {
+    if (!window.confirm(`确定清空全部 ${items.length} 个错词吗？它们的复习排期也会一并删除。`)) {
+      return;
+    }
     items.forEach((w) => storage.deleteWrongItem(w.id));
     setRefreshKey((k) => k + 1);
   };

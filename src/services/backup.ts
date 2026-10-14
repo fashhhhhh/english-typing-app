@@ -15,7 +15,8 @@ export function downloadBackup(storage: StorageProvider): string {
   link.href = url;
   link.download = name;
   link.click();
-  URL.revokeObjectURL(url);
+  // 立即 revoke 在 Firefox 等浏览器可能中断下载，延迟释放
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   return name;
 }
 

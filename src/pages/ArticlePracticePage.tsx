@@ -120,7 +120,7 @@ export default function ArticlePracticePage() {
           key={round}
           paragraphs={article.paragraphs}
           sound={settings.sound}
-          autoSpeak={false}
+          autoSpeak={settings.autoSpeak}
           defaultShowZh={settings.articleShowZh}
           frozen={showOriginal}
           onComplete={handleComplete}

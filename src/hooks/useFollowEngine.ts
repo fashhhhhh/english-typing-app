@@ -45,6 +45,13 @@ export function useFollowEngine(
     return () => window.clearInterval(timer);
   }, [snapshot.started, snapshot.finished, snapshot.paused, sync]);
 
+  // 卸载时清理未触发的"整词重置"定时器，避免访问已卸载的引擎
+  useEffect(() => {
+    return () => {
+      if (resetTimer.current) window.clearTimeout(resetTimer.current);
+    };
+  }, []);
+
   const inputChar = useCallback(
     (char: string) => {
       const engine = engineRef.current;
