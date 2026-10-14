@@ -85,10 +85,26 @@ export default function PracticeSession({
 
   /** 手机键盘弹出时压缩布局并回到顶部，保证单词始终在可见区域内 */
   const keyboardOpen = useKeyboardOpen(isTouch);
+  const wordRef = useRef<HTMLDivElement>(null);
 
+  // 键盘弹出后、以及每次按键后检查：若单词被浏览器自动滚动顶出可视区就拉回来
+  // （iOS 为了让聚焦元素露出键盘，会自行滚动整页或偏移可视视口）
   useEffect(() => {
-    if (keyboardOpen) window.scrollTo({ top: 0 });
-  }, [keyboardOpen]);
+    if (!keyboardOpen) return;
+    const timer = window.setTimeout(() => {
+      const word = wordRef.current;
+      if (!word) return;
+      const vv = window.visualViewport;
+      const vh = vv?.height ?? window.innerHeight;
+      if (word.getBoundingClientRect().bottom > vh + 4) {
+        window.scrollTo({ top: 0 });
+        // 轻微滚动一次，促使 Safari 重新同步可视视口
+        window.scrollBy(0, 1);
+        window.scrollBy(0, -1);
+      }
+    }, 220);
+    return () => window.clearTimeout(timer);
+  }, [keyboardOpen, snapshot.stats.totalKeystrokes]);
 
   /**
    * 点击练习区唤起手机键盘。
@@ -205,17 +221,19 @@ export default function PracticeSession({
     >
       {isTouch && <TypingPad inputRef={inputRef} />}
 
-      <WordPanel
-        snapshot={snapshot}
-        words={words}
-        showAnswer={showAnswer}
-        hidden={hidden}
-        infinite={infinite}
-        startHint={isTouch ? '点击这里开始打字' : '按任意键开始'}
-        ready={isTouch && focused && !frozen}
-        compact={keyboardOpen}
-        onSpeak={repeatSpeak}
-      />
+      <div ref={wordRef} className="flex w-full flex-1 flex-col">
+        <WordPanel
+          snapshot={snapshot}
+          words={words}
+          showAnswer={showAnswer}
+          hidden={hidden}
+          infinite={infinite}
+          startHint={isTouch ? '点击这里开始打字' : '按任意键开始'}
+          ready={isTouch && focused && !frozen}
+          compact={keyboardOpen}
+          onSpeak={repeatSpeak}
+        />
+      </div>
 
       <div className="flex w-full max-w-2xl flex-wrap items-center gap-2 sm:gap-3">
         {infinite ? (

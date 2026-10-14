@@ -81,15 +81,20 @@ export default function ArticleSession({
   const keyboardOpen = useKeyboardOpen(isTouch);
   const textRef = useRef<HTMLDivElement>(null);
 
+  // 键盘弹出后、以及每次按键后检查：若正文被浏览器自动滚动顶出可视区就拉回来
+  // （iOS 为了让聚焦元素露出键盘会自行滚动整页）
   useEffect(() => {
     if (!keyboardOpen) return;
-    // 等键盘动画结束再滚动，否则会被随后的视口变化覆盖
-    const timer = window.setTimeout(
-      () => textRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }),
-      150,
-    );
+    const timer = window.setTimeout(() => {
+      const holder = textRef.current;
+      if (!holder) return;
+      const vh = window.visualViewport?.height ?? window.innerHeight;
+      if (holder.getBoundingClientRect().bottom > vh + 4) {
+        holder.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      }
+    }, 180);
     return () => window.clearTimeout(timer);
-  }, [keyboardOpen]);
+  }, [keyboardOpen, snapshot.stats.totalKeystrokes]);
 
   const currentZh = paragraphs[snapshot.paragraphIndex]?.zh ?? '';
   const readAloud = useCallback(() => speakEnglish(snapshot.paragraphText), [snapshot.paragraphText]);
@@ -153,7 +158,6 @@ export default function ArticleSession({
 
   return (
     <div onClick={handleAreaClick} className="relative flex flex-col gap-4">
-      {isTouch && <TypingPad inputRef={inputRef} />}
       {/* 段落进度与操作 */}
       <div className="flex flex-wrap items-center justify-center gap-2.5 text-xs">
         <span className="rounded-full bg-ink px-3.5 py-1.5 font-medium tabular-nums text-white">
@@ -222,7 +226,8 @@ export default function ArticleSession({
         </div>
       )}
 
-      <div ref={textRef} className="scroll-mt-16">
+      <div ref={textRef} className="relative scroll-mt-16">
+        {isTouch && <TypingPad inputRef={inputRef} />}
         <ArticleText
           text={snapshot.paragraphText}
           states={snapshot.states}
