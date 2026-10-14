@@ -7,6 +7,7 @@ import ChapterProgress from '../../components/ChapterProgress';
 import TypingPad from '../../components/TypingPad';
 import { useFollowEngine } from '../../hooks/useFollowEngine';
 import { useTypingKeyboard } from '../../hooks/useTypingKeyboard';
+import { useKeyboardOpen } from '../../hooks/useVisualViewport';
 import { FollowSnapshot, FollowWord } from '../../engine/followEngine';
 import { speakEnglish } from '../../services/speech';
 import {
@@ -80,7 +81,14 @@ export default function PracticeSession({
   snapshotRef.current = snapshot;
 
   // 移动端：隐藏输入垫接管虚拟键盘（桌面端不渲染）
-  const { inputRef, focus, isTouch } = useTypingKeyboard({ onChar: inputChar, frozen });
+  const { inputRef, focus, isTouch, focused } = useTypingKeyboard({ onChar: inputChar, frozen });
+
+  /** 手机键盘弹出时压缩布局并回到顶部，保证单词始终在可见区域内 */
+  const keyboardOpen = useKeyboardOpen(isTouch);
+
+  useEffect(() => {
+    if (keyboardOpen) window.scrollTo({ top: 0 });
+  }, [keyboardOpen]);
 
   /**
    * 点击练习区唤起手机键盘。
@@ -189,7 +197,11 @@ export default function PracticeSession({
   return (
     <div
       onClick={handleAreaClick}
-      className="relative flex min-h-[52dvh] flex-col items-center gap-4 sm:min-h-[calc(100vh-10rem)] sm:gap-5"
+      className={`relative flex w-full flex-col items-center ${
+        keyboardOpen
+          ? 'min-h-0 gap-2'
+          : 'min-h-[50dvh] gap-4 sm:min-h-[calc(100vh-10rem)] sm:gap-5'
+      }`}
     >
       {isTouch && <TypingPad inputRef={inputRef} />}
 
@@ -200,6 +212,8 @@ export default function PracticeSession({
         hidden={hidden}
         infinite={infinite}
         startHint={isTouch ? '点击这里开始打字' : '按任意键开始'}
+        ready={isTouch && focused && !frozen}
+        compact={keyboardOpen}
         onSpeak={repeatSpeak}
       />
 
@@ -244,31 +258,33 @@ export default function PracticeSession({
           }`}
         >
           {snapshot.paused ? <Play size={12} /> : <Pause size={12} />}
-          {snapshot.paused ? '继续' : '暂停'}
+          <span className="hidden sm:inline">{snapshot.paused ? '继续' : '暂停'}</span>
         </button>
         <button
           onClick={finishEarly}
           disabled={!snapshot.started}
           title="随时结束本组并结算成绩"
-          className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all duration-200 ${
+          className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-200 sm:px-3.5 ${
             snapshot.started
               ? 'cursor-pointer border-slate-200 bg-white text-muted hover:-translate-y-0.5 hover:text-ink hover:shadow'
               : 'cursor-not-allowed border-slate-100 text-faint'
           }`}
         >
           <Square size={12} />
-          结束并结算
+          <span className="hidden sm:inline">结束并结算</span>
         </button>
       </div>
 
-      <SpeedBar stats={snapshot.stats} />
+      <SpeedBar stats={snapshot.stats} compact={keyboardOpen} />
 
-      <p className="px-4 text-center text-xs text-faint">
-        {isTouch
-          ? '输错需重打整个单词 · 点上方「暂停」可休息'
-          : '输入错误需重打整个单词 · Esc 暂停/继续 · Tab 显示答案 · Ctrl + J 重听发音 · Ctrl + Shift + ←/→ 切换单词'}
-        {hidden ? ' · 默写模式下字母以横线隐藏' : ''}
-      </p>
+      {!keyboardOpen && (
+        <p className="px-4 text-center text-xs text-faint">
+          {isTouch
+            ? '输错需重打整个单词 · 点上方「暂停」可休息'
+            : '输入错误需重打整个单词 · Esc 暂停/继续 · Tab 显示答案 · Ctrl + J 重听发音 · Ctrl + Shift + ←/→ 切换单词'}
+          {hidden ? ' · 默写模式下字母以横线隐藏' : ''}
+        </p>
+      )}
 
       {/* 暂停浮层 */}
       {snapshot.paused && (

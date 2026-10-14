@@ -316,10 +316,11 @@ export default function PracticePage() {
           </div>
           <button
             onClick={restart}
-            className="flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-muted shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:text-ink hover:shadow sm:px-4 sm:py-2.5 sm:text-sm"
+            title={infinite ? '换一批' : '下一组'}
+            className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-muted shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:text-ink hover:shadow sm:px-4 sm:py-2.5 sm:text-sm"
           >
-            <RefreshCw size={14} />
-            {infinite ? '换一批' : '下一组'}
+            <RefreshCw size={15} />
+            <span className="hidden sm:inline">{infinite ? '换一批' : '下一组'}</span>
           </button>
         </div>
       </div>

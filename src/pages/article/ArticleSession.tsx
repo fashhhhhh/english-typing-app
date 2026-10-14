@@ -7,6 +7,7 @@ import SpeedBar from '../../components/SpeedBar';
 import ChapterProgress from '../../components/ChapterProgress';
 import { useArticleEngine } from '../../hooks/useArticleEngine';
 import { useTypingKeyboard } from '../../hooks/useTypingKeyboard';
+import { useKeyboardOpen } from '../../hooks/useVisualViewport';
 import { ArticleSnapshot } from '../../engine/articleEngine';
 import { ArticleParagraph } from '../../services/articleService';
 import { speakEnglish } from '../../services/speech';
@@ -75,6 +76,20 @@ export default function ArticleSession({
     if (target.closest('button, a, input, select, label')) return;
     focus();
   };
+
+  /** 手机键盘弹出时压缩布局，并把正文滚到可视区顶部，避免被键盘遮挡 */
+  const keyboardOpen = useKeyboardOpen(isTouch);
+  const textRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!keyboardOpen) return;
+    // 等键盘动画结束再滚动，否则会被随后的视口变化覆盖
+    const timer = window.setTimeout(
+      () => textRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }),
+      150,
+    );
+    return () => window.clearTimeout(timer);
+  }, [keyboardOpen]);
 
   const currentZh = paragraphs[snapshot.paragraphIndex]?.zh ?? '';
   const readAloud = useCallback(() => speakEnglish(snapshot.paragraphText), [snapshot.paragraphText]);
@@ -160,12 +175,17 @@ export default function ArticleSession({
           className="flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 font-medium text-muted transition-all duration-200 hover:text-ink"
         >
           <Volume2 size={13} />
-          朗读本段
+          <span className="hidden sm:inline">朗读本段</span>
         </button>
         <button
-          onClick={togglePause}
+          onClick={() => {
+            const resuming = snapshot.paused;
+            togglePause();
+            if (resuming) focus();
+          }}
           disabled={!snapshot.started || snapshot.finished}
-          className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 font-medium transition-all duration-200 ${
+          title={snapshot.paused ? '继续' : '暂停'}
+          className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 font-medium transition-all duration-200 sm:px-3.5 ${
             snapshot.started && !snapshot.finished
               ? snapshot.paused
                 ? 'cursor-pointer border-primary/40 bg-primary/10 text-primary'
@@ -174,19 +194,20 @@ export default function ArticleSession({
           }`}
         >
           {snapshot.paused ? <Play size={12} /> : <Pause size={12} />}
-          {snapshot.paused ? '继续' : '暂停'}
+          <span className="hidden sm:inline">{snapshot.paused ? '继续' : '暂停'}</span>
         </button>
         <button
           onClick={finishEarly}
           disabled={!snapshot.started}
-          className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 font-medium transition-all duration-200 ${
+          title="随时结束并结算成绩"
+          className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 font-medium transition-all duration-200 sm:px-3.5 ${
             snapshot.started
               ? 'cursor-pointer border-slate-200 bg-white text-muted hover:-translate-y-0.5 hover:text-ink hover:shadow'
               : 'cursor-not-allowed border-slate-100 text-faint'
           }`}
         >
           <Square size={12} />
-          结束并结算
+          <span className="hidden sm:inline">结束并结算</span>
         </button>
       </div>
 
@@ -201,31 +222,42 @@ export default function ArticleSession({
         </div>
       )}
 
-      <ArticleText
-        text={snapshot.paragraphText}
-        states={snapshot.states}
-        cursor={snapshot.cursor}
-        wrongNow={false}
-        onClick={() => undefined}
-      />
-
-      <div className="flex flex-col items-center gap-4">
-        <ChapterProgress progress={snapshot.stats.progress} />
-        <SpeedBar stats={snapshot.stats} />
+      <div ref={textRef} className="scroll-mt-16">
+        <ArticleText
+          text={snapshot.paragraphText}
+          states={snapshot.states}
+          cursor={snapshot.cursor}
+          wrongNow={false}
+          onClick={() => undefined}
+        />
       </div>
 
-      <p className="px-4 text-center text-xs text-faint">
-        {snapshot.started
-          ? isTouch
-            ? '输错会停在原处，改正即可继续 · 空格与标点都要输入'
-            : '输错会停在原处，改正即可继续 · Esc 暂停/继续 · Backspace 退格 · Tab 临时看中文 · Ctrl + J 朗读本段'
-          : isTouch
-            ? '点击这里开始跟打（大小写不敏感）'
-            : '按任意键开始跟打（大小写不敏感）'}
-      </p>
+      <div className={`flex flex-col items-center ${keyboardOpen ? 'gap-2' : 'gap-4'}`}>
+        <ChapterProgress progress={snapshot.stats.progress} />
+        <SpeedBar stats={snapshot.stats} compact={keyboardOpen} />
+      </div>
+
+      {!keyboardOpen && (
+        <p className="px-4 text-center text-xs text-faint">
+          {snapshot.started
+            ? isTouch
+              ? '输错会停在原处，改正即可继续 · 空格与标点都要输入'
+              : '输错会停在原处，改正即可继续 · Esc 暂停/继续 · Backspace 退格 · Tab 临时看中文 · Ctrl + J 朗读本段'
+            : isTouch
+              ? '点击这里开始跟打（大小写不敏感）'
+              : '按任意键开始跟打（大小写不敏感）'}
+        </p>
+      )}
 
       {/* 暂停浮层 */}
-      {snapshot.paused && <PauseOverlay onResume={togglePause} />}
+      {snapshot.paused && (
+        <PauseOverlay
+          onResume={() => {
+            togglePause();
+            focus();
+          }}
+        />
+      )}
     </div>
   );
 }

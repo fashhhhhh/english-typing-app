@@ -35,6 +35,8 @@ export function useTypingKeyboard({ onChar, onBackspace, frozen = false }: Typin
   const frozenRef = useRef(frozen);
   const lastBackspaceAt = useRef(0);
   const [isTouch] = useState(detectTouch);
+  /** 输入垫是否已聚焦（手机上等价于"键盘已弹出"） */
+  const [focused, setFocused] = useState(false);
 
   useEffect(() => {
     charRef.current = onChar;
@@ -98,13 +100,20 @@ export function useTypingKeyboard({ onChar, onBackspace, frozen = false }: Typin
       }
     };
 
+    const onFocus = () => setFocused(true);
+    const onBlur = () => setFocused(false);
+
     el.addEventListener('beforeinput', onBeforeInput);
     el.addEventListener('input', onInput);
     el.addEventListener('keydown', onKeyDown);
+    el.addEventListener('focus', onFocus);
+    el.addEventListener('blur', onBlur);
     return () => {
       el.removeEventListener('beforeinput', onBeforeInput);
       el.removeEventListener('input', onInput);
       el.removeEventListener('keydown', onKeyDown);
+      el.removeEventListener('focus', onFocus);
+      el.removeEventListener('blur', onBlur);
     };
   }, [isTouch]);
 
@@ -120,5 +129,5 @@ export function useTypingKeyboard({ onChar, onBackspace, frozen = false }: Typin
     }
   }, []);
 
-  return { inputRef, focus, isTouch };
+  return { inputRef, focus, isTouch, focused };
 }
