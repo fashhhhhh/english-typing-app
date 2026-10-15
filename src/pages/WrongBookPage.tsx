@@ -11,6 +11,8 @@ export default function WrongBookPage() {
   const storage = useStorage();
   const navigate = useNavigate();
   const [refreshKey, setRefreshKey] = useState(0);
+  /** 当前展开完整释义的错词 id（释义过长被截断时，点击可查看全文） */
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const items = useMemo(
     () =>
@@ -41,8 +43,9 @@ export default function WrongBookPage() {
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6 px-5 py-6 sm:py-10">
-      <section className="flex items-end justify-between gap-3">
-        <div>
+      {/* 手机上纵向堆叠：文字占满整行，按钮整行放下方，避免左侧文字被挤成细条 */}
+      <section className="flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
           <h1 className="flex items-center gap-2 text-2xl font-semibold text-ink">
             <BookMarked size={20} className="text-warning" />
             错词本
@@ -52,10 +55,10 @@ export default function WrongBookPage() {
           </p>
         </div>
         {items.length > 0 && (
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex w-full items-center gap-2 sm:w-auto sm:shrink-0">
             <button
               onClick={() => navigate('/practice?source=wrong')}
-              className="flex cursor-pointer items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-dark"
+              className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-dark sm:flex-none"
             >
               <Play size={14} />
               开始错词专项
@@ -96,9 +99,19 @@ export default function WrongBookPage() {
               const due = w.nextReviewAt <= Date.now();
               return (
                 <li key={w.id} className="flex items-center gap-3 py-3">
-                  <div className="min-w-0 flex-1">
+                  <div
+                    className="min-w-0 flex-1 cursor-pointer select-none"
+                    onClick={() => setExpandedId((cur) => (cur === w.id ? null : w.id))}
+                    title={expandedId === w.id ? '点击收起' : '点击查看完整释义'}
+                  >
                     <p className="truncate font-mono text-sm font-semibold text-ink">{w.target}</p>
-                    <p className="truncate text-xs text-muted">{w.label || '—'}</p>
+                    <p
+                      className={`text-xs leading-relaxed text-muted ${
+                        expandedId === w.id ? '' : 'truncate'
+                      }`}
+                    >
+                      {w.label || '—'}
+                    </p>
                   </div>
                   <span
                     className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${

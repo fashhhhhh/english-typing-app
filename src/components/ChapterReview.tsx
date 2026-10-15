@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BookOpen, RotateCcw, Volume2, X } from 'lucide-react';
 import { FollowWord } from '../engine/followEngine';
 import { speakEnglish } from '../services/speech';
@@ -20,6 +21,9 @@ export default function ChapterReview({
   onRestart,
   onClose,
 }: ChapterReviewProps) {
+  /** 当前展开完整释义的单词（释义过长被截断时，点击可查看全文） */
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+
   return (
     <section className="animate-in fade-in rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm duration-200 sm:p-7">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -44,32 +48,46 @@ export default function ChapterReview({
       </div>
 
       <ul className="mt-5 grid gap-2.5 sm:grid-cols-2">
-        {words.map((w, i) => (
-          <li
-            key={`${i}-${w.word}`}
-            className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3"
-          >
-            <span className="w-5 shrink-0 text-right text-[11px] tabular-nums text-faint">
-              {i + 1}
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate font-mono text-sm font-semibold text-ink">
-                {w.word}
-              </span>
-              {w.label && (
-                <span className="mt-0.5 block truncate text-xs text-muted">{w.label}</span>
-              )}
-            </span>
-            <button
-              onClick={() => speakEnglish(w.word)}
-              title="朗读单词"
-              aria-label={`朗读 ${w.word}`}
-              className="shrink-0 cursor-pointer rounded-full p-2 text-faint transition-colors hover:bg-primary/10 hover:text-primary"
+        {words.map((w, i) => {
+          const key = `${i}-${w.word}`;
+          const expanded = expandedKey === key;
+          return (
+            <li
+              key={key}
+              className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3"
             >
-              <Volume2 size={15} />
-            </button>
-          </li>
-        ))}
+              <span className="w-5 shrink-0 text-right text-[11px] tabular-nums text-faint">
+                {i + 1}
+              </span>
+              <span
+                className="min-w-0 flex-1 cursor-pointer select-none"
+                onClick={() => setExpandedKey((cur) => (cur === key ? null : key))}
+                title={expanded ? '点击收起' : '点击查看完整释义'}
+              >
+                <span className="block truncate font-mono text-sm font-semibold text-ink">
+                  {w.word}
+                </span>
+                {w.label && (
+                  <span
+                    className={`mt-0.5 block text-xs leading-relaxed text-muted ${
+                      expanded ? '' : 'truncate'
+                    }`}
+                  >
+                    {w.label}
+                  </span>
+                )}
+              </span>
+              <button
+                onClick={() => speakEnglish(w.word)}
+                title="朗读单词"
+                aria-label={`朗读 ${w.word}`}
+                className="shrink-0 cursor-pointer rounded-full p-2 text-faint transition-colors hover:bg-primary/10 hover:text-primary"
+              >
+                <Volume2 size={15} />
+              </button>
+            </li>
+          );
+        })}
       </ul>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
